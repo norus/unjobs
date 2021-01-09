@@ -1,0 +1,45 @@
+service: unjobs-rss
+custom:
+  bucket: unjobs-xml-bucket
+
+plugins:
+  - serverless-python-requirements
+
+package:
+  exclude:
+    - node_modules/**
+    - .idea/**
+    - .serverless/**
+    - venv/**
+    - LICENSE
+    - README.md
+    - package.json
+    - package-lock.json
+    - requirements.txt
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: eu-west-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "arn:aws:s3:::${self:custom.bucket}/*"
+
+functions:
+  unjobs:
+    handler: handler.main
+    events:
+      - schedule:
+          # Checks for new jobs every hour
+          name: unjobs-check
+          rate: rate(1 hour)
+
+resources:
+  Resources:
+    StorageBucket:
+      Type: "AWS::S3::Bucket"
+      Properties:
+        BucketName: ${self:custom.bucket}
